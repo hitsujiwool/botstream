@@ -1,6 +1,6 @@
 {
   "name": "botstream",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "stream-based bot micro framework",
   "main": "index.js",
   "scripts": {
