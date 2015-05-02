@@ -20,10 +20,12 @@ function slackParser(options) {
     buffer.push(data.toString('utf8'));
   }, function() {
     var parsed = parse(buffer.join(''));
-    this.queue({
-      user: parsed.user_name,
-      input: parsed.text
-    });
+    if (parsed.user_name !== 'slackbot') {
+      this.queue({
+        user: parsed.user_name,
+        input: parsed.text
+      });
+    }
     this.queue(null);
   });
 };
@@ -85,6 +87,7 @@ Pipe it from/to existing application. Whatever application which implements stre
 
 ```javascript
 app.post('/bot', function(req, res) {
+  res.setHeader('Content-Type', 'application/json');
   req.pipe(bot.stream()).pipe(res);
 });
 ```
