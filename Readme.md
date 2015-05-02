@@ -20,6 +20,7 @@ function slackParser(options) {
     buffer.push(data.toString('utf8'));
   }, function() {
     var parsed = parse(buffer.join(''));
+    // omit payload from @slackbot which causes infinite meesage loop
     if (parsed.user_name !== 'slackbot') {
       this.queue({
         user: parsed.user_name,
@@ -36,8 +37,6 @@ function slackParser(options) {
 Here we define some rules to compose the outgoing message. Action must be defined as a function which returns a through (both readable and writable) stream.
 
 ```javascript
-var through = require('through');
-
 function hello() {
   return through(function(event) {
     event.output = "hello " + event.user;
@@ -74,7 +73,8 @@ var botstream = require('botstream');
 
 var actions = botstream.select()
   .case(/hello/, hello)
-  .case(/bye/, bye);
+  .case(/bye/, bye)
+  .default();
 
 var bot = botstream.app(slackParser)
   .register(actions)
