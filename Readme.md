@@ -2,11 +2,13 @@
 
 stream-based bot micro framework
 
+![botstream.gif](https://cldup.com/gDtCRAqaNR.gif)
+
 ## Example
 
 ### 1. Define Message Parser (from slack)
 
-Parse [slack outgoing webhooks](https://api.slack.com/outgoing-webhooks) POST data and convert it to an object with properties `user` and `input`.
+Parse [slack outgoing webhooks](https://api.slack.com/outgoing-webhooks) POST payload and convert it to an event object with properties `user` and `input`.
 
 ```javascript
 var parse = require('querystring').parse;
@@ -20,7 +22,7 @@ function slackParser(options) {
     var parsed = parse(buffer.join(''));
     this.queue({
       user: parsed.user_name,
-      input: parsed.text,
+      input: parsed.text
     });
     this.queue(null);
   });
@@ -36,37 +38,27 @@ var through = require('through');
 
 function hello() {
   return through(function(event) {
-    event.output = "hello " + event.user
+    event.output = "hello " + event.user;
     this.queue(event);
-  })
+  });
 }
 
 function bye() {
   return through(function(event) {
-    event.output = "bye " + event.user
+    event.output = "bye " + event.user;
     this.queue(event);
-  })
+  });
 }
 ```
 
 ### 3. Define Outgoing (to slack)
 
-If we want to response messages via an outgoing URL (or we may call it [incoming](https://api.slack.com/incoming-webhooks) from the viewpoint of message receiver), we have to define another through stream which posts the `output` value as a side effect.
+Convert event object to slack response format.
 
 ```javascript
-var https = require('https');
-var through = require('through');
-var parse = require('url').parse;
-
 function slackOutgoing() {
   return through(function(event) {
-    var parsed = parse(process.env.SLACK_URL);
-    https.request({
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      host: parsed.host,
-      path: parsed.pathname
-    }).end(JSON.stringify({ text: event.output }));
+    this.queue(JSON.stringify({ text: event.output }));
   });
 };
 ```
@@ -78,12 +70,12 @@ Integrate all the functions into a botstream application.
 ```javascript
 var botstream = require('botstream');
 
-var actions = botstream.select();
+var actions = botstream.select()
   .case(/hello/, hello)
-  .case(/bye/, bye)
+  .case(/bye/, bye);
 
-botstream.app(slackParser);
-  .register(actions);
+var bot = botstream.app(slackParser)
+  .register(actions)
   .register(slackOutgoing);
 ```
 
