@@ -22,8 +22,7 @@
   },
   "homepage": "https://github.com/hitsujiwool/botstream#readme",
   "dependencies": {
-    "stream-combiner": "^0.2.1",
-    "through": "^2.3.7"
+    "event-stream": "^3.3.0"
   },
   "devDependencies": {
     "espower-loader": "^0.10.0",

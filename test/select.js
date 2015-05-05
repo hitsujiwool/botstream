@@ -1,5 +1,6 @@
 var assert = require('power-assert');
-var through = require('through');
+var map = require('event-stream').map;
+var through = require('event-stream').through;
 
 var select = require('../lib/select');
 
@@ -11,9 +12,17 @@ function foo() {
 
 function anotherFoo() {
   return through(function(data) {
-    this.queue('foo selected');
-  });  
+    this.queue('anotherFoo selected');
+  });
 };
+
+function asyncFoo() {
+  return map(function(data, cb) {
+    setTimeout(function() {
+      cb(null, 'asyncFoo selected');
+    }, 100);
+  });
+}
 
 function bar() {
   return through(function(data) {
@@ -24,7 +33,7 @@ function bar() {
 function defaults() {
   return through(function(data) {
     this.queue('defaults selected');
-  }); 
+  });
 }
 
 describe('select()', function() {
@@ -52,7 +61,7 @@ describe('select()', function() {
     var didOnData = false;
     var t = select()
           .case(/foo/, foo)
-          .case(/bar/, bar)    
+          .case(/bar/, bar)
           .default();
     var s = t();
     s
@@ -68,11 +77,31 @@ describe('select()', function() {
     s.end();
   });
 
+  it('should pipe stream to asyncFoo', function(done) {
+    var didOnData = false;
+    var t = select()
+          .case(/foo/, asyncFoo)
+          .case(/bar/, bar)
+          .default();
+    var s = t();
+    s
+      .on('data', function(data) {
+        didOnData = true;
+        assert.equal(data, 'asyncFoo selected');
+      })
+      .on('end', function() {
+        assert(didOnData);
+        done();
+      });
+    s.write({ input: 'foo' });
+    s.end();
+  });
+
   it('should do nothing', function(done) {
     var didOnData = false;
     var t = select()
           .case(/foo/, foo)
-          .case(/bar/, bar)    
+          .case(/bar/, bar)
           .default();
     var s = t();
     s
@@ -92,7 +121,7 @@ describe('select()', function() {
     var didOnData = false;
     var t = select()
           .case(/foo/, foo)
-          .case(/bar/, bar)    
+          .case(/bar/, bar)
           .default(defaults);
     var s = t();
     s
@@ -106,13 +135,13 @@ describe('select()', function() {
       });
     s.write({ input: 'baz' });
     s.end();
-  });    
+  });
 
   it('first come, first served', function(done) {
     var didOnData = false;
     var t = select()
           .case(/foo/, foo)
-          .case(/foo/, anotherFoo) 
+          .case(/foo/, anotherFoo)
           .default();
     var s = t();
     s
@@ -126,5 +155,5 @@ describe('select()', function() {
       });
     s.write({ input: 'foo' });
     s.end();
-  });  
+  });
 });

@@ -1,5 +1,5 @@
 var assert = require('power-assert');
-var through = require('through');
+var through = require('event-stream').through;
 
 var botstream = require('..');
 
